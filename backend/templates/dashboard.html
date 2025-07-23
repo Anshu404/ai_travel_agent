@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Analytics Dashboard</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa; /* A light grey background for better contrast */
+            color: #333;
+        }
+        .kpi-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+            background-color: #ffffff;
+            height: 100%;
+        }
+        .kpi-card:hover {
+            transform: translateY(-5px);
+        }
+        .kpi-card .card-body {
+            display: flex;
+            align-items: center;
+        }
+        .kpi-icon {
+            font-size: 2rem;
+            min-width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-right: 20px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .kpi-card h3 {
+            font-weight: 700;
+            font-size: 2.2rem;
+            margin-bottom: 0;
+        }
+        .kpi-card p {
+            color: #6c757d;
+            margin-bottom: 0;
+        }
+        .chart-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            padding: 25px;
+            background-color: #ffffff;
+            height: 100%;
+        }
+        .table-responsive {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .table {
+            margin-bottom: 0;
+        }
+        .table thead {
+            background-color: #e2e8f0;
+            font-weight: 600;
+        }
+        .table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+        .truncate {
+            max-width: 250px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .channel-icon {
+            width: 18px;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container py-5">
+        
+        <div class="text-center mb-5">
+            <h1 class="display-5 fw-bold">Agent Dashboard</h1>
+            <p class="lead text-muted">A real-time overview of agent performance and interactions.</p>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <div class="col-lg-3 col-md-6">
+                <div class="kpi-card">
+                    <div class="card-body">
+                        <div class="kpi-icon bg-primary"><i class="fa-solid fa-comments"></i></div>
+                        <div>
+                            <p>Total Messages</p>
+                            <h3>{{ total_messages }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="kpi-card">
+                    <div class="card-body">
+                        <div class="kpi-icon bg-success"><i class="fa-solid fa-users"></i></div>
+                        <div>
+                            <p>Total Conversations</p>
+                            <h3>{{ total_conversations }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="kpi-card">
+                    <div class="card-body">
+                        <div class="kpi-icon bg-warning text-dark"><i class="fa-solid fa-chart-line"></i></div>
+                        <div>
+                            <p>Avg. Msgs/Session</p>
+                            <h3>{{ avg_messages }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="kpi-card">
+                    <div class="card-body">
+                        <div class="kpi-icon bg-danger"><i class="fa-solid fa-bug"></i></div>
+                        <div>
+                            <p>Detected Errors</p>
+                            <h3>{{ total_errors }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <div class="col-md-6">
+                <div class="chart-card">
+                    <h5 class="card-title fw-bold mb-3">Channel Distribution</h5>
+                    <div style="height: 300px;">
+                        <canvas id="channelChart"></canvas>
+                        <p id="no-channel-data" class="text-center text-muted mt-5 d-none">No channel data to display.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="chart-card">
+                    <h5 class="card-title fw-bold mb-3">Tool Usage Frequency</h5>
+                     <div style="height: 300px;">
+                        <canvas id="toolUsageChart"></canvas>
+                        <p id="no-tool-data" class="text-center text-muted mt-5 d-none">No tool usage to display yet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="chart-card">
+                    <h5 class="card-title fw-bold">Recent Interactions</h5>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-striped table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col">Timestamp</th>
+                                    <th scope="col">Channel</th>
+                                    <th scope="col">User Query</th>
+                                    <th scope="col">Tool Used</th>
+                                    <th scope="col">Agent Response</th>
+                                </tr>
+                            </thead>
+                            <tbody id="interactions-table-body">
+                                {% for interaction in recent_interactions %}
+                                <tr>
+                                    <td>{{ interaction.timestamp.split('.')[0] }}</td>
+                                    <td>
+                                        {% if interaction.channel == 'WhatsApp' %}
+                                            <i class="fab fa-whatsapp text-success channel-icon"></i>
+                                        {% else %}
+                                            <i class="fas fa-desktop text-primary channel-icon"></i>
+                                        {% endif %}
+                                        {{ interaction.channel }}
+                                    </td>
+                                    <td><div class="truncate" title="{{ interaction.user_query }}">{{ interaction.user_query }}</div></td>
+                                    <td>
+                                        {% if interaction.tool_used and interaction.tool_used != 'None' and interaction.tool_used != 'Error' %}
+                                            <span class="badge bg-info-subtle text-info-emphasis rounded-pill">{{ interaction.tool_used }}</span>
+                                        {% elif interaction.tool_used == 'Error' %}
+                                            <span class="badge bg-danger-subtle text-danger-emphasis rounded-pill">Error</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><div class="truncate" title="{{ interaction.agent_response }}">{{ interaction.agent_response }}</div></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center mt-3">
+                        <button id="show-more-btn" class="btn btn-outline-primary">Show More</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- Chart Data ---
+            const toolLabels = {{ tool_labels | safe }};
+            const toolData = {{ tool_counts | safe }};
+            const channelLabels = {{ channel_labels | safe }};
+            const channelData = {{ channel_counts | safe }};
+
+            // --- 1. Channel Distribution Pie Chart ---
+            const channelCanvas = document.getElementById('channelChart');
+            const noChannelDataEl = document.getElementById('no-channel-data');
+            if (channelData && channelData.length > 0) {
+                new Chart(channelCanvas.getContext('2d'), {
+                    type: 'pie',
+                    data: {
+                        labels: channelLabels,
+                        datasets: [{ data: channelData, backgroundColor: ['#4A90E2', '#50E3C2', '#F5A623'], hoverOffset: 4 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } }
+                });
+            } else {
+                channelCanvas.classList.add('d-none');
+                noChannelDataEl.classList.remove('d-none');
+            }
+
+            // --- 2. Tool Usage Bar Chart ---
+            const toolCanvas = document.getElementById('toolUsageChart');
+            const noToolDataEl = document.getElementById('no-tool-data');
+            if (toolData && toolData.length > 0) {
+                new Chart(toolCanvas.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: toolLabels,
+                        datasets: [{ label: 'Times Used', data: toolData, backgroundColor: '#4A90E2' }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+                });
+            } else {
+                toolCanvas.classList.add('d-none');
+                noToolDataEl.classList.remove('d-none');
+            }
+
+            // --- 3. "Show More" Functionality for Interactions Table ---
+            const tableBody = document.getElementById('interactions-table-body');
+            const rows = tableBody.getElementsByTagName('tr');
+            const showMoreBtn = document.getElementById('show-more-btn');
+            const rowsToShowInitially = 5;
+
+            if (rows.length <= rowsToShowInitially) {
+                showMoreBtn.style.display = 'none'; // Hide button if not enough rows
+            } else {
+                // Hide rows that are beyond the initial limit
+                for (let i = rowsToShowInitially; i < rows.length; i++) {
+                    rows[i].style.display = 'none';
+                }
+
+                // Add click event to the button
+                showMoreBtn.addEventListener('click', function() {
+                    for (let i = rowsToShowInitially; i < rows.length; i++) {
+                        rows[i].style.display = 'table-row'; // Show all rows
+                    }
+                    showMoreBtn.style.display = 'none'; // Hide button after it's clicked
+                });
+            }
+        });
+    </script>
+</body>
+</html>
